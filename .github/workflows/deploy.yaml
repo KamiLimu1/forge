@@ -1,0 +1,100 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      deploy_path:
+        required: true
+        type: string
+      compose_file:
+        required: true
+        type: string
+      debug:
+        required: false
+        type: boolean
+        default: false
+      database_url:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    env:
+      VM_HOST: ${{ secrets.VM_HOST }}
+      VM_USERNAME: ${{ secrets.VM_USERNAME }}
+      DEPLOY_PATH: ${{ inputs.deploy_path }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.VM_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Create environment file
+        run: |
+          cat > .env << ENVEOF
+          ENVIRONMENT=${{ inputs.environment }}
+          DEBUG=${{ inputs.debug }}
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+          JWT_ALGORITHM=HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES=30
+          DATABASE_URL=${{ inputs.database_url }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM=${{ secrets.EMAIL_FROM }}
+          CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+          GITHUB_REPOSITORY=${{ github.repository }}
+          ENVEOF
+
+      - name: Ensure deployment directories exist
+        run: |
+          ssh -i ~/.ssh/id_rsa "$VM_USERNAME@$VM_HOST" \
+            "sudo mkdir -p $DEPLOY_PATH && sudo chown -R \$USER:\$USER $DEPLOY_PATH"
+
+      - name: Copy deployment files
+        run: |
+          scp -i ~/.ssh/id_rsa ${{ inputs.compose_file }} "$VM_USERNAME@$VM_HOST:$DEPLOY_PATH/docker-compose.yaml"
+          scp -i ~/.ssh/id_rsa .env "$VM_USERNAME@$VM_HOST:$DEPLOY_PATH/"
+
+      - name: Login to Container Registry on VM
+        run: |
+          ssh -i ~/.ssh/id_rsa "$VM_USERNAME@$VM_HOST" \
+            "echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin"
+
+      - name: Deploy application
+        run: |
+          ssh -i ~/.ssh/id_rsa "$VM_USERNAME@$VM_HOST" << EOF
+            cd $DEPLOY_PATH
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker system prune -f
+          EOF
+
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/id_rsa "$VM_USERNAME@$VM_HOST" << EOF
+            cd $DEPLOY_PATH
+            echo "Waiting for application to start..."
+            sleep 10
+            docker compose ps
+            docker compose logs --tail=20 api
+          EOF
+
+      - name: Cleanup
+        if: always()
+        run: rm -f ~/.ssh/id_rsa .env
