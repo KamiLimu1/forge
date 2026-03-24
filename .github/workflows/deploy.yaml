@@ -19,6 +19,20 @@ on:
     secrets:
       database_url:
         required: true
+      VM_HOST:
+        required: true
+      VM_USERNAME:
+        required: true
+      VM_SSH_PRIVATE_KEY:
+        required: true
+      SECRET_KEY:
+        required: true
+      JWT_SECRET_KEY:
+        required: true
+      POSTGRES_PASSWORD:
+        required: true
+      CORS_ORIGINS:
+        required: true
 
 jobs:
   deploy:
