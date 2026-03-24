@@ -4,8 +4,9 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir uv
 
-COPY pyproject.toml .
-RUN uv pip install --system --no-cache -e .
+COPY pyproject.toml README.md ./
+COPY src ./src
+RUN uv pip install --system --no-cache .
 
 FROM python:3.11-slim
 
