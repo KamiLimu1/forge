@@ -16,9 +16,9 @@ on:
         required: false
         type: boolean
         default: false
+    secrets:
       database_url:
         required: true
-        type: string
 
 jobs:
   deploy:
