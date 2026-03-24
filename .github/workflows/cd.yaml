@@ -78,8 +78,7 @@ jobs:
       deploy_path: /opt/forge-test
       compose_file: docker-compose.test.yaml
       debug: true
-    secrets:
-      database_url: ${{ secrets.DATABASE_URL_TEST }}
+    secrets: inherit
 
   deploy-production:
     name: Deploy to Production
@@ -91,5 +90,4 @@ jobs:
       deploy_path: /opt/forge
       compose_file: docker-compose.prod.yaml
       debug: false
-    secrets:
-      database_url: ${{ secrets.DATABASE_URL_PROD }}
+    secrets: inherit
