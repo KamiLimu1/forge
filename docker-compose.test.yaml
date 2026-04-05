@@ -1,7 +1,7 @@
 ---
 services:
   api:
-    image: ghcr.io/kamilimu1/forge:latest
+    image: ghcr.io/kamilimu1/forge:develop
     restart: unless-stopped
     ports:
       - "8000:8000"
