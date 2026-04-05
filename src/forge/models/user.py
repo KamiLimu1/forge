@@ -50,7 +50,7 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     account_state: Mapped[AccountState] = mapped_column(
-        Enum(AccountState),
+        Enum(AccountState, values_callable=lambda x: [e.value for e in x]),
         default=AccountState.PENDING,
         nullable=False,
     )
@@ -96,7 +96,7 @@ class UserRoleAssignment(Base, UUIDPrimaryKeyMixin):
         nullable=False,
     )
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole),
+        Enum(UserRole, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
     cohort_id: Mapped[uuid.UUID | None] = mapped_column(

@@ -32,7 +32,7 @@ class Cohort(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     programme_type: Mapped[ProgrammeType] = mapped_column(
-        Enum(ProgrammeType),
+        Enum(ProgrammeType, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -50,7 +50,7 @@ class Cohort(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=True,
     )
     status: Mapped[CohortStatus] = mapped_column(
-        Enum(CohortStatus),
+        Enum(CohortStatus, values_callable=lambda x: [e.value for e in x]),
         default=CohortStatus.DRAFT,
         nullable=False,
     )
