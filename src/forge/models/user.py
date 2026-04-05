@@ -64,6 +64,7 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         "UserRoleAssignment",
         back_populates="user",
         cascade="all, delete-orphan",
+        foreign_keys="UserRoleAssignment.user_id",
     )
     invitations_sent: Mapped[list["Invitation"]] = relationship(
         "Invitation",
