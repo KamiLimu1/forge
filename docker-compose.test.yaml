@@ -1,6 +1,7 @@
+---
 services:
   api:
-    image: ghcr.io/${GITHUB_REPOSITORY}:latest
+    image: ghcr.io/kamilimu1/forge:latest
     restart: unless-stopped
     ports:
       - "8000:8000"
